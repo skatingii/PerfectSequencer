@@ -34,6 +34,24 @@ for LINK in Packages/*.lua Packages/*.luau; do
 
 	cp -r "Packages/_Index/${DEP}" "${OUT}/_Index/${DEP}"
 
+	# Tests, manifests and docs would otherwise sync in as stray instances.
+	find "${OUT}/_Index/${DEP}" -type f -regex ".*\(\.test\.luau\|\.spec\.luau\|wally\.toml\|aftman\.toml\|\.md\|LICENSE\)$" -delete
+
+	# Some packages ship their source under src/ and rely on a nested
+	# default.project.json to become a ModuleScript. Rojo honours that, a plain
+	# file copy does not, so flatten those to a single file for Script Sync.
+	PROJECT="${OUT}/_Index/${DEP}/${INNER}/default.project.json"
+
+	if [ -f "$PROJECT" ]; then
+		TARGET="$(sed -n 's/.*"[$]path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$PROJECT" | head -1)"
+		SOURCE="${OUT}/_Index/${DEP}/${INNER}/${TARGET}"
+
+		if [ -f "$SOURCE" ]; then
+			cp "$SOURCE" "${OUT}/_Index/${DEP}/${INNER}.luau"
+			rm -rf "${OUT}/_Index/${DEP:?}/${INNER:?}"
+		fi
+	fi
+
 	printf '\n\nreturn (require(script.Parent.Parent["%s"].%s))\n' "$DEP" "$INNER" \
 		> "${OUT}/_Index/${PKG}/${ALIAS_NAME}.luau"
 done
