@@ -12,6 +12,9 @@
       },
       "_Index": {
         "$path": "Packages/_Index"
+      },
+      "Maid": {
+        "$path": "Packages/Maid.lua"
       }
     }
   }

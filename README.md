@@ -49,7 +49,13 @@ wally install
 bash scripts/build-package-tree.sh
 ```
 
-That writes `dist/Packages`, containing the `_Index` layout, the generated link files, and Signal. Copy `dist/Packages` into your project's `ReplicatedStorage`. When the package is later published, `wally install` produces the same paths, so nothing has to move.
+That writes `dist/Packages`, containing the `_Index` layout, the generated link files, and every dependency. Copy `dist/Packages` into your project's `ReplicatedStorage`.
+
+Note that `devsparkle/maid` ships its source under `src/` with its own `default.project.json`, so Rojo turns it into a ModuleScript but a plain file copy does not. Under Studio Script Sync, build the tree to a model first:
+
+```bash
+rojo build verify.project.json -o Packages.rbxm
+``` When the package is later published, `wally install` produces the same paths, so nothing has to move.
 
 ## Shared scheduler
 
@@ -120,7 +126,7 @@ Track:Play()
 
 Callbacks run on pooled threads borrowed from [`sleitnick/signal`](https://sleitnick.github.io/RbxUtil/api/Signal/), and are wrapped in `pcall`. A callback that errors is logged and cannot take the scheduler down with it.
 
-Tracing is on in Studio and off in a live game (`Configuration.Tracing`).
+Tracing is on in Studio and off in a live game, gated on `RunService:IsStudio()`.
 
 ## Development
 

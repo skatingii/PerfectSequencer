@@ -1,11 +1,32 @@
+--[[
+
+	PerfectSequencer
+	Made by skaterstudios
+
+	Frame-accurate event scheduling for Roblox.
+
+	AddEvent and Run share one wall-clock scheduler whose delays are measured
+	in 60fps frames but ticked against real DeltaTime, so they hold under
+	frame drops.
+
+	ForTrack returns a per-swing scheduler locked to an AnimationTrack's own
+	timeline. It follows the animation through speed changes and dies with
+	the track.
+
+	Version 0.1.0
+
+]]
+
 --!strict
 
 const RunService = game:GetService("RunService")
 
 const Signal = require(script.Parent.Signal)
-const Configuration = require("@self/Configuration")
+const Maid = require(script.Parent.Maid)
 const Dispatcher = require("@self/Dispatcher")
 const TrackSequencer = require("@self/TrackSequencer")
+
+const FRAMES_PER_SECOND = 60
 
 export type SequencerEvent = {
 	PresetFrame: number,
@@ -20,7 +41,7 @@ const PerfectSequencer = {}
 PerfectSequencer.Completed = Signal.new()
 
 const Queue: { TrackSequencer.ScheduledEvent } = {}
-local Connection: RBXScriptConnection? = nil
+local RunMaid: any = nil
 local Clock = 0
 
 function PerfectSequencer.AddEvent(Event: SequencerEvent)
@@ -34,7 +55,7 @@ function PerfectSequencer.AddEvent(Event: SequencerEvent)
 		return
 	end
 
-	const Base = if Connection then Clock else 0
+	const Base = if RunMaid then Clock else 0
 
 	const Scheduled: TrackSequencer.ScheduledEvent = {
 		TargetFrame = Base + Event.PresetFrame,
@@ -62,22 +83,34 @@ function PerfectSequencer.Reset()
 end
 
 function PerfectSequencer.IsRunning(): boolean
-	return Connection ~= nil
+	return RunMaid ~= nil
 end
 
 function PerfectSequencer.GetPendingCount(): number
 	return #Queue
 end
 
+function PerfectSequencer.Stop()
+	if not RunMaid then
+		return
+	end
+
+	RunMaid:DoCleaning()
+	RunMaid = nil
+
+	PerfectSequencer.Completed:Fire()
+end
+
 function PerfectSequencer.Run()
-	if Connection then
+	if RunMaid then
 		return
 	end
 
 	Clock = 0
+	RunMaid = Maid.new()
 
-	Connection = RunService.PostSimulation:Connect(function(DeltaTime: number)
-		Clock += DeltaTime * Configuration.FramesPerSecond
+	RunMaid:GiveTask(RunService.PostSimulation:Connect(function(DeltaTime: number)
+		Clock += DeltaTime * FRAMES_PER_SECOND
 
 		for Index = #Queue, 1, -1 do
 			const Event = Queue[Index]
@@ -90,13 +123,10 @@ function PerfectSequencer.Run()
 			Dispatcher.Dispatch(Event.Callback, Event.Args)
 		end
 
-		if #Queue == 0 and Connection then
-			Connection:Disconnect()
-			Connection = nil
-
-			PerfectSequencer.Completed:Fire()
+		if #Queue == 0 then
+			PerfectSequencer.Stop()
 		end
-	end)
+	end))
 end
 
 function PerfectSequencer.ForTrack(Track: AnimationTrack): TrackSequencer.TrackSequencer
