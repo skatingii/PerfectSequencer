@@ -4,8 +4,8 @@ Frame-accurate event scheduling for Roblox.
 
 Two schedulers, deliberately different:
 
-- **`AddEvent` / `Run`** — one shared wall-clock scheduler. Delays are measured in 60fps frames but tick against real `DeltaTime`, so they hold under frame drops.
-- **`ForTrack`** — a per-swing scheduler locked to an `AnimationTrack`'s own timeline. It reads `TimePosition`, so it follows the animation through speed changes, and it dies with the track.
+- **`AddEvent` / `Run`**: one shared wall-clock scheduler. Delays are measured in 60fps frames but tick against real `DeltaTime`, so they hold under frame drops.
+- **`ForTrack`**: a per-swing scheduler locked to an `AnimationTrack`'s own timeline. It reads `TimePosition`, so it follows the animation through speed changes, and it dies with the track.
 
 ## Installation
 
@@ -14,7 +14,31 @@ Two schedulers, deliberately different:
 PerfectSequencer = "skatingii/perfect-sequencer@0.1.0"
 ```
 
-Then `wally install`.
+Then `wally install`. The package lands at `Packages/PerfectSequencer`.
+
+### With Rojo
+
+`wally install` writes `Packages/`; point your project at it and sync:
+
+```json
+{
+  "tree": {
+    "ReplicatedStorage": {
+      "Packages": { "$path": "Packages" }
+    }
+  }
+}
+```
+
+### Without Rojo (Studio Script Sync)
+
+Build the package to a model file and drag it into Studio:
+
+```bash
+rojo build default.project.json -o PerfectSequencer.rbxm
+```
+
+`sleitnick/signal` must sit beside it, since the package resolves its dependency as a runtime sibling.
 
 ## Shared scheduler
 
@@ -83,7 +107,7 @@ Track:Play()
 
 ## Notes
 
-Callbacks run on pooled threads borrowed from [`sleitnick/signal`](https://sleitnick.github.io/RbxUtil/api/Signal/), and are wrapped in `pcall` — a callback that errors is logged and cannot take the scheduler down with it.
+Callbacks run on pooled threads borrowed from [`sleitnick/signal`](https://sleitnick.github.io/RbxUtil/api/Signal/), and are wrapped in `pcall`. A callback that errors is logged and cannot take the scheduler down with it.
 
 Tracing is on in Studio and off in a live game (`Configuration.Tracing`).
 
