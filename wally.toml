@@ -1,0 +1,12 @@
+[package]
+name = "skatingii/perfect-sequencer"
+version = "0.1.0"
+description = "Frame-accurate event scheduling for Roblox, on a shared clock or locked to an AnimationTrack's timeline."
+license = "MIT"
+authors = ["skatingii"]
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+include = ["src", "src/**", "wally.toml", "default.project.json", "README.md", "LICENSE"]
+
+[dependencies]
+Signal = "sleitnick/signal@2.0.3"

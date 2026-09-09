@@ -1,0 +1,23 @@
+name: Publish
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ok-nick/setup-aftman@v0.4.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Authenticate wally
+        run: |
+          mkdir -p ~/.wally
+          printf 'token = "%s"\n' "${{ secrets.WALLY_AUTH_TOKEN }}" > ~/.wally/auth.toml
+
+      - name: Publish
+        run: wally publish
