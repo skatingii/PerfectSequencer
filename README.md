@@ -40,6 +40,17 @@ rojo build default.project.json -o PerfectSequencer.rbxm
 
 `sleitnick/signal` must sit beside it, since the package resolves its dependency as a runtime sibling.
 
+### Before it is published
+
+Until the package is on the registry, wally cannot install it: wally 0.3.2 supports neither path nor git dependencies. To use it anyway, build the tree wally would have produced and copy it in:
+
+```bash
+wally install
+bash scripts/build-package-tree.sh
+```
+
+That writes `dist/Packages`, containing the `_Index` layout, the generated link files, and Signal. Copy `dist/Packages` into your project's `ReplicatedStorage`. When the package is later published, `wally install` produces the same paths, so nothing has to move.
+
 ## Shared scheduler
 
 ```lua
