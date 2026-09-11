@@ -2,8 +2,8 @@
 
 const RunService = game:GetService("RunService")
 
-const Signal = require(script.Parent.Parent.Signal)
-const Maid = require(script.Parent.Parent.Maid)
+const Signal = require("./Signal")
+const Cleanup = require("./Cleanup")
 const Dispatcher = require("./Dispatcher")
 
 const FRAMES_PER_SECOND = 60
@@ -19,8 +19,8 @@ export type ScheduledEvent = {
 type Fields = {
 	Track: AnimationTrack,
 	Events: { ScheduledEvent },
-	Maid: any,
-	Finished: any,
+	Cleanup: Cleanup.Cleanup,
+	Finished: Signal.Signal,
 	IsDead: boolean,
 	HasStarted: boolean,
 }
@@ -34,7 +34,7 @@ function TrackSequencer.new(Track: AnimationTrack): TrackSequencer
 	const self: Fields = {
 		Track = Track,
 		Events = {},
-		Maid = Maid.new(),
+		Cleanup = Cleanup.new(),
 		Finished = Signal.new(),
 		IsDead = false,
 		HasStarted = false,
@@ -69,7 +69,7 @@ function TrackSequencer.Cancel(self: TrackSequencer)
 	end
 
 	self.IsDead = true
-	self.Maid:DoCleaning()
+	self.Cleanup:Clean()
 
 	const Unfired = #self.Events
 	table.clear(self.Events)
@@ -88,7 +88,7 @@ function TrackSequencer.Start(self: TrackSequencer): TrackSequencer
 	const StartedAt = os.clock()
 	local HasPlayed = false
 
-	self.Maid:GiveTask(RunService.PostSimulation:Connect(function()
+	self.Cleanup:Add(RunService.PostSimulation:Connect(function()
 		if self.IsDead then
 			return
 		end

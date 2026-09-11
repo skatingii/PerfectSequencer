@@ -21,8 +21,8 @@
 
 const RunService = game:GetService("RunService")
 
-const Signal = require(script.Parent.Signal)
-const Maid = require(script.Parent.Maid)
+const Signal = require("@self/Signal")
+const Cleanup = require("@self/Cleanup")
 const Dispatcher = require("@self/Dispatcher")
 const TrackSequencer = require("@self/TrackSequencer")
 
@@ -41,7 +41,7 @@ const PerfectSequencer = {}
 PerfectSequencer.Completed = Signal.new()
 
 const Queue: { TrackSequencer.ScheduledEvent } = {}
-local RunMaid: any = nil
+local RunCleanup: Cleanup.Cleanup? = nil
 local Clock = 0
 
 function PerfectSequencer.AddEvent(Event: SequencerEvent)
@@ -55,7 +55,7 @@ function PerfectSequencer.AddEvent(Event: SequencerEvent)
 		return
 	end
 
-	const Base = if RunMaid then Clock else 0
+	const Base = if RunCleanup then Clock else 0
 
 	const Scheduled: TrackSequencer.ScheduledEvent = {
 		TargetFrame = Base + Event.PresetFrame,
@@ -83,7 +83,7 @@ function PerfectSequencer.Reset()
 end
 
 function PerfectSequencer.IsRunning(): boolean
-	return RunMaid ~= nil
+	return RunCleanup ~= nil
 end
 
 function PerfectSequencer.GetPendingCount(): number
@@ -91,25 +91,27 @@ function PerfectSequencer.GetPendingCount(): number
 end
 
 function PerfectSequencer.Stop()
-	if not RunMaid then
+	if not RunCleanup then
 		return
 	end
 
-	RunMaid:DoCleaning()
-	RunMaid = nil
+	RunCleanup:Clean()
+	RunCleanup = nil
 
 	PerfectSequencer.Completed:Fire()
 end
 
 function PerfectSequencer.Run()
-	if RunMaid then
+	if RunCleanup then
 		return
 	end
 
 	Clock = 0
-	RunMaid = Maid.new()
 
-	RunMaid:GiveTask(RunService.PostSimulation:Connect(function(DeltaTime: number)
+	const NewCleanup = Cleanup.new()
+	RunCleanup = NewCleanup
+
+	NewCleanup:Add(RunService.PostSimulation:Connect(function(DeltaTime: number)
 		Clock += DeltaTime * FRAMES_PER_SECOND
 
 		for Index = #Queue, 1, -1 do

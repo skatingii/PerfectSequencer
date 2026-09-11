@@ -1,6 +1,6 @@
 --!strict
 
-const Signal = require(script.Parent.Parent.Signal)
+const Signal = require("./Signal")
 
 export type Callback = (...any) -> ...any
 

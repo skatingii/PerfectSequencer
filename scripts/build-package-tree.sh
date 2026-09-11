@@ -18,43 +18,8 @@ mkdir -p "${OUT}/_Index/${PKG}"
 
 cp -r src "${OUT}/_Index/${PKG}/${NAME}"
 
-# Every dependency is copied into _Index and given a link file beside the
-# package that requires it, which is how wally makes deps resolve as siblings.
-for LINK in Packages/*.lua Packages/*.luau; do
-	[ -f "$LINK" ] || continue
-
-	ALIAS_NAME="$(basename "${LINK%.*}")"
-	DEP="$(sed -n 's/.*_Index\["\([^"]*\)"\].*/\1/p' "$LINK" | head -1)"
-	INNER="$(sed -n 's/.*_Index\[[^]]*\]\[\{0,1\}\.\{0,1\}"\{0,1\}\([A-Za-z0-9_-]*\)"\{0,1\}\]\{0,1\}).*/\1/p' "$LINK" | head -1)"
-
-	if [ -z "$DEP" ] || [ ! -d "Packages/_Index/${DEP}" ]; then
-		echo "error: could not resolve dependency from ${LINK}" >&2
-		exit 1
-	fi
-
-	cp -r "Packages/_Index/${DEP}" "${OUT}/_Index/${DEP}"
-
-	# Tests, manifests and docs would otherwise sync in as stray instances.
-	find "${OUT}/_Index/${DEP}" -type f -regex ".*\(\.test\.luau\|\.spec\.luau\|wally\.toml\|aftman\.toml\|\.md\|LICENSE\)$" -delete
-
-	# Some packages ship their source under src/ and rely on a nested
-	# default.project.json to become a ModuleScript. Rojo honours that, a plain
-	# file copy does not, so flatten those to a single file for Script Sync.
-	PROJECT="${OUT}/_Index/${DEP}/${INNER}/default.project.json"
-
-	if [ -f "$PROJECT" ]; then
-		TARGET="$(sed -n 's/.*"[$]path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$PROJECT" | head -1)"
-		SOURCE="${OUT}/_Index/${DEP}/${INNER}/${TARGET}"
-
-		if [ -f "$SOURCE" ]; then
-			cp "$SOURCE" "${OUT}/_Index/${DEP}/${INNER}.luau"
-			rm -rf "${OUT}/_Index/${DEP:?}/${INNER:?}"
-		fi
-	fi
-
-	printf '\n\nreturn (require(script.Parent.Parent["%s"].%s))\n' "$DEP" "$INNER" \
-		> "${OUT}/_Index/${PKG}/${ALIAS_NAME}.luau"
-done
+# PerfectSequencer has no dependencies, so _Index holds only the package
+# itself and no link files are generated beside it.
 
 cat > "${OUT}/${ALIAS}.luau" <<EOF
 local REQUIRED_MODULE = require(script.Parent._Index["${PKG}"]["${NAME}"])

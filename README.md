@@ -69,7 +69,7 @@ wally install
 bash scripts/build-package-tree.sh
 ```
 
-That writes `dist/Packages`, containing the `_Index` layout, the generated link files, and every dependency. Copy it into your project's `ReplicatedStorage`. When the package is later published, `wally install` writes the same paths, so no require ever changes.
+That writes `dist/Packages`, containing the `_Index` layout and the generated link file. Copy it into your project's `ReplicatedStorage`. When the package is later published, `wally install` writes the same paths, so no require ever changes.
 
 </details>
 
@@ -309,11 +309,13 @@ Rule of thumb: if the timing is written on an animator's timeline, use `ForTrack
 
 ## How it behaves
 
-**Callbacks run on pooled threads.** Dispatch goes through [`sleitnick/signal`](https://sleitnick.github.io/RbxUtil/api/Signal/), which reuses coroutines, so scheduling an event does not allocate a thread per callback.
+**No dependencies.** The package installs with nothing attached. `Signal` and `Cleanup` are internal modules, so nothing else in your project is touched and no version can drift underneath you.
+
+**Callbacks run on pooled threads.** Dispatch goes through an internal signal that caches a runner coroutine, so scheduling an event does not allocate a thread per callback. A handler that yields simply loses the cached thread and the next dispatch creates a new one.
 
 **A failing callback cannot take the scheduler down.** Every callback is wrapped in `pcall`, and errors are logged rather than swallowed.
 
-**Connections are owned by a maid.** Both schedulers hand their connections to [`devsparkle/maid`](https://github.com/devSparkle/Maid), so there is no separate disconnect path to forget.
+**Connections are owned by a cleanup object.** Both schedulers hand their connections to an internal `Cleanup`, so there is no separate disconnect path to forget. It swaps its task list out before running, so a task added during cleanup is not cleaned by that pass and re-entrant calls cannot double-clean.
 
 **Tracing is on in Studio, off in a live game.** Gated on `RunService:IsStudio()`, so a track that never plays is reported while you are developing and stays quiet in production.
 
