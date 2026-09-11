@@ -328,7 +328,7 @@ wally install
 stylua --check src/
 selene src/
 
-rojo sourcemap dev.project.json -o sourcemap.json
+rojo sourcemap default.project.json -o sourcemap.json
 luau-lsp analyze --platform=roblox --definitions=globalTypes.d.luau --sourcemap=sourcemap.json src/
 ```
 

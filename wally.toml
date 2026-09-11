@@ -12,7 +12,6 @@ exclude = [
 	"scripts",
 	"DevPackages",
 	".github",
-	"dev.project.json",
 	"aftman.toml",
 	"selene.toml",
 	"stylua.toml",
