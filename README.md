@@ -53,6 +53,8 @@ Animation data is authored in frames. Once a hitbox is written as `0.2` seconds,
 
 ## Installation
 
+**Luau, with [Wally](https://wally.run):**
+
 ```toml
 # wally.toml
 [dependencies]
@@ -60,6 +62,18 @@ PerfectSequencer = "skatingii/perfect-sequencer@0.1.0"
 ```
 
 Then run `wally install`. The package lands at `Packages/PerfectSequencer`.
+
+**TypeScript, with [roblox-ts](https://roblox-ts.com):**
+
+```bash
+npm install @skating/perfect-sequencer
+```
+
+```ts
+import PerfectSequencer from "@skating/perfect-sequencer";
+```
+
+The two registries use different scopes because they key off different accounts: Wally uses the GitHub username, npm uses the npm username. Same library, same version.
 
 <details>
 <summary><b>Before it is published</b></summary>
