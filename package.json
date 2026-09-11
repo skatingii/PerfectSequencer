@@ -1,0 +1,30 @@
+{
+	"name": "@rbxts/perfect-sequencer",
+	"version": "0.1.0",
+	"description": "Frame-accurate event scheduling for Roblox",
+	"license": "MIT",
+	"main": "src/init.luau",
+	"types": "src/index.d.ts",
+	"files": [
+		"src",
+		"CHANGELOG.md"
+	],
+	"keywords": [
+		"roblox",
+		"roblox-ts",
+		"luau",
+		"animation",
+		"scheduler"
+	],
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/skatingii/PerfectSequencer.git"
+	},
+	"bugs": {
+		"url": "https://github.com/skatingii/PerfectSequencer/issues"
+	},
+	"homepage": "https://github.com/skatingii/PerfectSequencer#readme",
+	"scripts": {
+		"publish:wally": "wally publish"
+	}
+}

@@ -9,3 +9,4 @@ sourcemap.json
 globalTypes.d.luau
 pkg.zip
 dist/
+node_modules/
