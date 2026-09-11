@@ -327,9 +327,10 @@ wally install
 
 stylua --check src/
 selene src/
+lute run tests/Run.luau
 
 rojo sourcemap default.project.json -o sourcemap.json
 luau-lsp analyze --platform=roblox --definitions=globalTypes.d.luau --sourcemap=sourcemap.json src/
 ```
 
-CI runs all four on every push. `globalTypes.d.luau` is fetched by the workflow and is not committed.
+CI runs all of these on every push. `globalTypes.d.luau` is fetched by the workflow and is not committed.

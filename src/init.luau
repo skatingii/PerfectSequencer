@@ -24,6 +24,7 @@ const RunService = game:GetService("RunService")
 const Signal = require("@self/Signal")
 const Cleanup = require("@self/Cleanup")
 const Dispatcher = require("@self/Dispatcher")
+const Queue = require("@self/Queue")
 const TrackSequencer = require("@self/TrackSequencer")
 
 const FRAMES_PER_SECOND = 60
@@ -40,7 +41,7 @@ const PerfectSequencer = {}
 
 PerfectSequencer.Completed = Signal.new()
 
-const Queue: { TrackSequencer.ScheduledEvent } = {}
+const Events: { Queue.Event } = {}
 local RunCleanup: Cleanup.Cleanup? = nil
 local Clock = 0
 
@@ -57,29 +58,15 @@ function PerfectSequencer.AddEvent(Event: SequencerEvent)
 
 	const Base = if RunCleanup then Clock else 0
 
-	const Scheduled: TrackSequencer.ScheduledEvent = {
+	Queue.Insert(Events, {
 		TargetFrame = Base + Event.PresetFrame,
 		Callback = Event.Callback,
 		Args = Event.Args,
-	}
-
-	local Low, High = 1, #Queue + 1
-
-	while Low < High do
-		const Middle = (Low + High) // 2
-
-		if Queue[Middle].TargetFrame > Scheduled.TargetFrame then
-			Low = Middle + 1
-		else
-			High = Middle
-		end
-	end
-
-	table.insert(Queue, Low, Scheduled)
+	})
 end
 
 function PerfectSequencer.Reset()
-	table.clear(Queue)
+	table.clear(Events)
 end
 
 function PerfectSequencer.IsRunning(): boolean
@@ -87,7 +74,7 @@ function PerfectSequencer.IsRunning(): boolean
 end
 
 function PerfectSequencer.GetPendingCount(): number
-	return #Queue
+	return #Events
 end
 
 function PerfectSequencer.Stop()
@@ -114,18 +101,11 @@ function PerfectSequencer.Run()
 	NewCleanup:Add(RunService.PostSimulation:Connect(function(DeltaTime: number)
 		Clock += DeltaTime * FRAMES_PER_SECOND
 
-		for Index = #Queue, 1, -1 do
-			const Event = Queue[Index]
-
-			if Clock < Event.TargetFrame then
-				break
-			end
-
-			table.remove(Queue, Index)
-			Dispatcher.Dispatch(Event.Callback, Event.Args)
+		for _, Item in Queue.TakeDue(Events, Clock) do
+			Dispatcher.Dispatch(Item.Callback, Item.Args)
 		end
 
-		if #Queue == 0 then
+		if #Events == 0 then
 			PerfectSequencer.Stop()
 		end
 	end))

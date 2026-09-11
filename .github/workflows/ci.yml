@@ -24,6 +24,9 @@ jobs:
       - name: Lint
         run: selene src/
 
+      - name: Test
+        run: lute run tests/Run.luau
+
       - name: Fetch Roblox type definitions
         run: curl -sL -o globalTypes.d.luau https://raw.githubusercontent.com/JohnnyMorganz/luau-lsp/main/scripts/globalTypes.d.luau
 
