@@ -1,5 +1,5 @@
 {
-	"name": "@skatingii/perfect-sequencer",
+	"name": "@skating/perfect-sequencer",
 	"version": "0.1.0",
 	"description": "Frame-accurate event scheduling for Roblox",
 	"license": "MIT",
