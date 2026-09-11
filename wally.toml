@@ -8,6 +8,8 @@ registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
 exclude = [
 	"Packages",
+	"dist",
+	"scripts",
 	"DevPackages",
 	".github",
 	"dev.project.json",
