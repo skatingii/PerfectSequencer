@@ -3,13 +3,14 @@
   <p align="center">
     Frame-accurate event scheduling for Roblox
     <br />
-    <a href="https://github.com/skatingii/PerfectSequencer"><strong>github →</strong></a>
+    <a href="https://www.npmjs.com/package/@skating/perfect-sequencer"><strong>npm package →</strong></a>
   </p>
 </p>
 
 <div align="center">
 
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/skatingii/PerfectSequencer/ci.yml?style=for-the-badge&branch=main&logo=github)
+[![NPM Version](https://img.shields.io/npm/v/@skating/perfect-sequencer.svg?style=for-the-badge&logo=npm)](https://www.npmjs.com/package/@skating/perfect-sequencer)
 [![GitHub License](https://img.shields.io/github/license/skatingii/PerfectSequencer?style=for-the-badge)](LICENSE)
 
 </div>
