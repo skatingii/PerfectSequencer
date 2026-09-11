@@ -45,6 +45,7 @@ Animation data is authored in frames. Once a hitbox is written as `0.2` seconds,
     - [`TrackSequencer.Finished`](#tracksequencerfinished)
 - [Choosing a scheduler](#choosing-a-scheduler)
 - [Compared to animation markers](#compared-to-animation-markers)
+- [Edge cases](#edge-cases)
 - [How it behaves](#how-it-behaves)
 - [Contributing](#contributing)
 
@@ -324,6 +325,18 @@ marker      sequencer   timeposition      delta
 The sub-millisecond gap is ordering within a single frame. Markers fire during animation evaluation; this polls `TimePosition` on `PostSimulation`, which runs after. If you use both on one track, the marker always wins the tie.
 
 So use markers when the timing belongs to the animation and an animator should own it. Reach for `ForTrack` when you want the frame written in code next to the logic it triggers, when the timing is per weapon or per state rather than per animation, or when you want the lifecycle: chaining, cancellation, and a `Finished` signal that tells you whether the swing completed.
+
+## Edge cases
+
+All four of these follow from the source rather than from measurement.
+
+**A dropped frame delays an event, it never skips one.** The pending list is swept every frame against `TimePosition` with `>=`, so a stall that jumps the timeline past a target fires that target on the frame the stall ends. Late, never lost.
+
+**If the track stops with events pending, they are dropped.** The stopped check runs before dispatch, so on the frame a track stops, pending events do not fire, even ones already due. `Finished(false)` is fired instead, and that is the hook for cleanup which must happen either way.
+
+**A frame past the end of the track never fires.** `:At(90)` on a 1.2 second animation (72 frames at 60fps) is unreachable. The track stops, the previous rule applies, and you get `Finished(false)` rather than a warning. Check your frame numbers against the animation length.
+
+**On a looping track, events fire once, not once per loop.** An event is removed when it fires, and the sequencer cancels itself when the list empties. So the first pass fires everything and the sequencer is done, even though the track keeps playing. Create a new sequencer per loop if you need per-loop events.
 
 ## How it behaves
 
