@@ -1,0 +1,3 @@
+# Build tooling is not part of the package source, so keep it out of the
+# repository language statistics.
+scripts/** linguist-detectable=false
