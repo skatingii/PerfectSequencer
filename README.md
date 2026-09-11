@@ -44,6 +44,7 @@ Animation data is authored in frames. Once a hitbox is written as `0.2` seconds,
     - [`TrackSequencer:Cancel()`](#tracksequencercancel)
     - [`TrackSequencer.Finished`](#tracksequencerfinished)
 - [Choosing a scheduler](#choosing-a-scheduler)
+- [Compared to animation markers](#compared-to-animation-markers)
 - [How it behaves](#how-it-behaves)
 - [Contributing](#contributing)
 
@@ -306,6 +307,23 @@ This is the hook for cleanup that must happen whether a swing lands or is interr
 | Use for | cooldowns, delayed logic, timed sequences | hitboxes, VFX, sounds tied to keyframes |
 
 Rule of thumb: if the timing is written on an animator's timeline, use `ForTrack`. If it is game logic that happens to be delayed, use `AddEvent`.
+
+## Compared to animation markers
+
+`ForTrack` is not more precise than `GetMarkerReachedSignal`. Measured over five swings in Studio, a marker and a `:At()` callback targeting the same point fired on the same frame every time, reporting identical `TimePosition`:
+
+```
+marker      sequencer   timeposition      delta
+0.7851s     0.7860s     0.4196 / 0.4196   +0.9ms   (first play, animation load)
+0.4377s     0.4384s     0.4235 / 0.4235   +0.7ms
+0.4413s     0.4420s     0.4235 / 0.4235   +0.7ms
+0.4378s     0.4384s     0.4275 / 0.4275   +0.6ms
+0.4325s     0.4333s     0.4196 / 0.4196   +0.8ms
+```
+
+The sub-millisecond gap is ordering within a single frame. Markers fire during animation evaluation; this polls `TimePosition` on `PostSimulation`, which runs after. If you use both on one track, the marker always wins the tie.
+
+So use markers when the timing belongs to the animation and an animator should own it. Reach for `ForTrack` when you want the frame written in code next to the logic it triggers, when the timing is per weapon or per state rather than per animation, or when you want the lifecycle: chaining, cancellation, and a `Finished` signal that tells you whether the swing completed.
 
 ## How it behaves
 
