@@ -29,16 +29,35 @@ const Task = {
 	end,
 }
 
-const function LoadModule(Name: string): any
+const Loaded: { [string]: any } = {}
+
+local LoadModule
+
+const function SandboxRequire(Path: string): any
+	const Name = string.match(Path, "([%w_]+)$")
+
+	if not Name then
+		error(`test harness cannot resolve require("{Path}")`, 0)
+	end
+
+	return LoadModule(Name)
+end
+
+function LoadModule(Name: string): any
 	const Handle = Fs.open(`src/{Name}.luau`)
 	const Source = Fs.read(Handle)
 	Fs.close(Handle)
 
 	const Compiled = Luau.compile(Source)
 
+	if Loaded[Name] then
+		return Loaded[Name]
+	end
+
 	const Environment = {
 		task = Task,
 		warn = Warn,
+		require = SandboxRequire,
 
 		typeof = typeof,
 		type = type,
@@ -64,7 +83,10 @@ const function LoadModule(Name: string): any
 		buffer = buffer,
 	}
 
-	return Luau.load(Compiled, Name, Environment)()
+	const Module = Luau.load(Compiled, Name, Environment)()
+	Loaded[Name] = Module
+
+	return Module
 end
 
 local Passed = 0
@@ -106,17 +128,20 @@ function Context.TakeWarnings(self: any): { string }
 	return Taken
 end
 
-const Suites: { { Name: string, Module: string, Run: (any, any) -> () } } = {
+const Suites: { { Name: string, Module: string?, Run: (any, any) -> () } } = {
 	{ Name = "Queue", Module = "Queue", Run = require("./Queue") },
 	{ Name = "Signal", Module = "Signal", Run = require("./Signal") },
 	{ Name = "Cleanup", Module = "Cleanup", Run = require("./Cleanup") },
+	{ Name = "TrackState", Module = "TrackState", Run = require("./TrackState") },
+	{ Name = "Version", Module = nil, Run = require("./Version") },
 }
 
 for _, Entry in Suites do
 	Suite = Entry.Name
 	print(Entry.Name)
 
-	Entry.Run(setmetatable({}, Context), LoadModule(Entry.Module))
+	const Module = if Entry.Module then LoadModule(Entry.Module) else nil
+	Entry.Run(setmetatable({}, Context), Module)
 end
 
 print(`\n{Passed} passed, {Failed} failed`)

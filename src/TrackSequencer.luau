@@ -5,20 +5,16 @@ const RunService = game:GetService("RunService")
 const Signal = require("./Signal")
 const Cleanup = require("./Cleanup")
 const Dispatcher = require("./Dispatcher")
+const Queue = require("./Queue")
+const TrackState = require("./TrackState")
 
-const FRAMES_PER_SECOND = 60
-const NEVER_PLAYED_TIMEOUT = 1
 const TRACING = RunService:IsStudio()
 
-export type ScheduledEvent = {
-	TargetFrame: number,
-	Callback: Dispatcher.Callback,
-	Args: { any }?,
-}
+export type ScheduledEvent = Queue.Event
 
 type Fields = {
 	Track: AnimationTrack,
-	Events: { ScheduledEvent },
+	State: TrackState.State,
 	Cleanup: Cleanup.Cleanup,
 	Finished: Signal.Signal,
 	IsDead: boolean,
@@ -33,7 +29,7 @@ export type TrackSequencer = typeof(setmetatable({} :: Fields, TrackSequencer))
 function TrackSequencer.new(Track: AnimationTrack): TrackSequencer
 	const self: Fields = {
 		Track = Track,
-		Events = {},
+		State = TrackState.new(os.clock()),
 		Cleanup = Cleanup.new(),
 		Finished = Signal.new(),
 		IsDead = false,
@@ -54,7 +50,7 @@ function TrackSequencer.At(
 		return self
 	end
 
-	table.insert(self.Events, {
+	TrackState.Add(self.State, {
 		TargetFrame = Frame,
 		Callback = Callback,
 		Args = Args,
@@ -71,8 +67,8 @@ function TrackSequencer.Cancel(self: TrackSequencer)
 	self.IsDead = true
 	self.Cleanup:Clean()
 
-	const Unfired = #self.Events
-	table.clear(self.Events)
+	const Unfired = #self.State.Events
+	table.clear(self.State.Events)
 
 	self.Finished:Fire(Unfired == 0)
 	self.Finished:Destroy()
@@ -85,44 +81,22 @@ function TrackSequencer.Start(self: TrackSequencer): TrackSequencer
 
 	self.HasStarted = true
 
-	const StartedAt = os.clock()
-	local HasPlayed = false
-
 	self.Cleanup:Add(RunService.PostSimulation:Connect(function()
 		if self.IsDead then
 			return
 		end
 
-		if not self.Track.IsPlaying then
-			if not HasPlayed and os.clock() - StartedAt <= NEVER_PLAYED_TIMEOUT then
-				return
-			end
+		const Result = TrackState.Step(self.State, self.Track.IsPlaying, self.Track.TimePosition, os.clock())
 
-			if not HasPlayed and TRACING then
-				warn(
-					`[perfect sequencer] track "{self.Track.Name}" never played within `
-						.. `{NEVER_PLAYED_TIMEOUT}s, cancelling`
-				)
-			end
-
-			self:Cancel()
-			return
+		for _, Event in Result.Due do
+			Dispatcher.Dispatch(Event.Callback, Event.Args)
 		end
 
-		HasPlayed = true
-
-		const Frame = self.Track.TimePosition * FRAMES_PER_SECOND
-
-		for Index = #self.Events, 1, -1 do
-			const Event = self.Events[Index]
-
-			if Frame >= Event.TargetFrame then
-				table.remove(self.Events, Index)
-				Dispatcher.Dispatch(Event.Callback, Event.Args)
-			end
+		if Result.TimedOut and TRACING then
+			warn(`[perfect sequencer] track "{self.Track.Name}" never played, cancelling`)
 		end
 
-		if #self.Events == 0 then
+		if Result.Cancel then
 			self:Cancel()
 		end
 	end))
